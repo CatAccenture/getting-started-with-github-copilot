@@ -28,7 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="participants-section">
             <strong>Participants:</strong>
             <ul class="participants-list">
-              ${details.participants.map(p => `<li>${p}</li>`).join('')}
+              ${details.participants.map(p => `
+                <li>
+                  <span class="participant-name">${p}</span>
+                  <span class="delete-participant" title="Remove" data-activity="${name}" data-participant="${p}" style="cursor:pointer; margin-left:8px; color:#c62828; font-weight:bold;">&#x2716;</span>
+                </li>
+              `).join('')}
             </ul>
           </div>
         `;
@@ -84,6 +89,34 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // Event delegation for delete icon
+  document.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-participant")) {
+      const activity = event.target.getAttribute("data-activity");
+      const participant = event.target.getAttribute("data-participant");
+      if (activity && participant) {
+        try {
+          const response = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(participant)}`, {
+            method: "POST",
+          });
+          const result = await response.json();
+          if (response.ok) {
+            fetchActivities(); // Refresh list
+          } else {
+            messageDiv.textContent = result.detail || "An error occurred";
+            messageDiv.className = "error";
+            messageDiv.classList.remove("hidden");
+          }
+        } catch (error) {
+          messageDiv.textContent = "Failed to unregister. Please try again.";
+          messageDiv.className = "error";
+          messageDiv.classList.remove("hidden");
+          console.error("Error unregistering participant:", error);
+        }
+      }
     }
   });
 
